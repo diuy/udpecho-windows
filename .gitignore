@@ -1,0 +1,6 @@
+*VC.db
+*VC.opendb
+/.vs
+Debug
+x64
+/ipch

@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="sys">
+      <UniqueIdentifier>{5861b00c-e12c-4d7d-b554-1dfa9f73c8bd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="res">
+      <UniqueIdentifier>{e21b74cf-a6f0-49dd-8efc-3bc39e7a431f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="main">
+      <UniqueIdentifier>{ef882d5c-d756-4a38-980a-26722989f1e7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>sys</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>sys</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>res</Filter>
+    </ClInclude>
+    <ClInclude Include="MainApp.h">
+      <Filter>sys</Filter>
+    </ClInclude>
+    <ClInclude Include="MainDlg.h">
+      <Filter>sys</Filter>
+    </ClInclude>
+    <ClInclude Include="UdpEcho.h">
+      <Filter>main</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>sys</Filter>
+    </ClCompile>
+    <ClCompile Include="MainApp.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="MainDlg.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="UdpEcho.cpp">
+      <Filter>main</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\udpecho-client.ico">
+      <Filter>res</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="udpecho-client.rc">
+      <Filter>res</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\udpechoclient.rc2">
+      <Filter>res</Filter>
+    </None>
+  </ItemGroup>
+</Project>
