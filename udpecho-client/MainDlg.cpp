@@ -8,11 +8,15 @@
 #define new DEBUG_NEW
 #endif
 
+#define DEFAULT_IP "172.20.2.220"
+#define DEFAULT_PORT 40000
+#define DEFAULT_SPEED 1000*50
+#define DEFAULT_SIZE 200
+
 
 
 CMainDlg::CMainDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_UDPECHOCLIENT_DIALOG, pParent)
-	, tag(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -45,11 +49,49 @@ static void Cleanup() {
 	WSACleanup();
 }
 static CEdit *textConsole = NULL;
-static CStringA msg;
+static CString message;
+static FILE* logFile = NULL;
+static const char* iniFile = ".\\udpecho.ini";
+static int tag = -1;
 
-void WriteLog(const string & str, int type) {
+void WriteLog(const string & content, int type) {
+	static const char* LEVEL[] = {"DEBUG", "ERROR" };
 
+	CStringA  str(CTime::GetCurrentTime().Format("%Y-%m-%d %H:%M:%S"));
+	str.AppendFormat(": %s: %s\r\n", LEVEL[type], content.c_str());
+
+	TRACE(str);
+
+	message.Append(CString(str));
+	textConsole->SetWindowText(message);
+	textConsole->LineScroll(textConsole->GetLineCount());
+
+	if (logFile) {
+		fwrite((LPCSTR)str, str.GetLength(), 1, logFile);
+	}
 }
+
+
+static void ReadConfig(string &ip,int& port,int &speed,int& size,int& tag) {
+	char tmp[255] = { 0 };
+	GetPrivateProfileStringA("Config", "ip", DEFAULT_IP, tmp, 255, iniFile);
+	ip = tmp;
+	port = GetPrivateProfileIntA("Config", "port", DEFAULT_PORT, iniFile);
+	speed = GetPrivateProfileIntA("Config", "speed", DEFAULT_SPEED, iniFile);
+	size = GetPrivateProfileIntA("Config", "size", DEFAULT_SIZE, iniFile);
+	srand((uint32_t)time(0));
+	int defaultTag = rand();
+	tag = GetPrivateProfileIntA("Config", "tag", defaultTag, iniFile);
+}
+
+static void WriteConfig(string ip, int port, int speed, int size, int tag) {
+	WritePrivateProfileStringA("Config", "ip", ip.c_str(), iniFile);
+	WritePrivateProfileStringA("Config", "port",IntToString(port).c_str(), iniFile);
+	WritePrivateProfileStringA("Config", "speed", IntToString(speed).c_str(), iniFile);
+	WritePrivateProfileStringA("Config", "size", IntToString(size).c_str(), iniFile);
+	WritePrivateProfileStringA("Config", "tag", IntToString(tag).c_str(), iniFile);
+}
+
 
 BOOL CMainDlg::OnInitDialog()
 {
@@ -58,12 +100,25 @@ BOOL CMainDlg::OnInitDialog()
 
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
-	srand((uint32_t)time(0));
-	while (tag == 0) {
-		tag = rand();
-	}
+
 	::textConsole = &this->textConsole;
-	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
+
+	string ip;
+	int port ;
+	int speed ;
+	int size ;
+	ReadConfig(ip, port, speed, size, tag);
+	SetDlgItemText(IDC_TEXT_IP, CStringW(ip.c_str()));
+	SetDlgItemText(IDC_TEXT_PORT, CStringW(IntToString(port).c_str()));
+	SetDlgItemText(IDC_TEXT_SPEED, CStringW(IntToString(speed).c_str()));
+	SetDlgItemText(IDC_TEXT_SIZE, CStringW(IntToString(size).c_str()));
+	SetDlgItemText(IDC_TEXT_TAG, CStringW(IntToString(tag).c_str()));
+
+	_mkdir(".\\log");
+	CStringA logFileName(CTime::GetCurrentTime().Format("log\\%Y%m%d.log"));
+	logFile = fopen(logFileName, "ab");
+
+	return TRUE;  
 }
 
 
@@ -101,14 +156,73 @@ HCURSOR CMainDlg::OnQueryDragIcon()
 
 
 void CMainDlg::OnBnClickedBtnStart() {
+	CString strIp, strPort,strSpeed,strSize;
+	string ip;
+	int port = -1;
+	int speed = -1;
+	int size = -1;
+
+	GetDlgItemText(IDC_TEXT_IP, strIp);
+	GetDlgItemText(IDC_TEXT_PORT, strPort);
+	GetDlgItemText(IDC_TEXT_SPEED, strSpeed);
+	GetDlgItemText(IDC_TEXT_SIZE, strSize);
+
+
+	if (strIp.IsEmpty()) {
+		CERR("地址不能为空");
+		return;
+	}
+	ip = (const char*)CStringA(strIp);
+	if (strPort.IsEmpty()) {
+		CERR("端口不能为空");
+		return;
+	}
+	port = StringToInt((const char*)CStringA(strPort), port);
+	if (port == -1) {
+		CERR("端口格式错误");
+		return;
+	}
+
+	if (strSpeed.IsEmpty()) {
+		CERR("速度不能为空");
+		return;
+	}
+	speed = StringToInt((const char*)CStringA(strSpeed), speed);
+	if (speed == -1) {
+		CERR("速度格式错误");
+		return;
+	}
+
+	if (strSize.IsEmpty()) {
+		CERR("大小不能为空");
+		return;
+	}
+	size = StringToInt((const char*)CStringA(strSize), size);
+	if (size == -1) {
+		CERR("大小格式错误");
+		return;
+	}
+
+	echo.reset(new UdpEcho(ip, port, speed, size, tag));
+	if (echo->start()) {
+		WriteConfig(ip, port, speed, size, tag);
+	}
 }
 
 
 void CMainDlg::OnBnClickedBtnStop() {
+	if (echo) {
+		echo->stop();
+		echo.reset();
+	}
 }
 
 
 void CMainDlg::OnDestroy() {
+	if (logFile) {
+		fclose(logFile);
+		logFile = NULL;
+	}
 	Cleanup();
 	CDialogEx::OnDestroy();
 }

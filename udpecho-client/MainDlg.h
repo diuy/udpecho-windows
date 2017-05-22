@@ -4,7 +4,7 @@
 
 #pragma once
 #include "afxwin.h"
-
+#include "UdpEcho.h"
 
 class CMainDlg : public CDialogEx
 {
@@ -31,9 +31,7 @@ public:
 	afx_msg void OnBnClickedBtnStop();
 private:
 	CEdit textConsole;
-	int tag;
-	
-
+	unique_ptr<UdpEcho> echo;
 public:
 	afx_msg void OnDestroy();
 };

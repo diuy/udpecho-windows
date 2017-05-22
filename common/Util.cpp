@@ -27,5 +27,15 @@ int StringToInt(const char * str, int defaultValue) {
 	istringstream is(str);
 	int k = defaultValue;
 	is >> k;
+	if (!is.eof())
+		return defaultValue;
 	return k;
+}
+
+std::string IntToString(int i) {
+
+	ostringstream os;
+	os << i;
+
+	return os.str();
 }

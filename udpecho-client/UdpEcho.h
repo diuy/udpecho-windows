@@ -22,6 +22,7 @@ public:
 private:
 	void sendData();
 	void recvData();
+	void printResult();
 private:
 	const string ip;
 	const int port;

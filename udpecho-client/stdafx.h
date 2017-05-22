@@ -39,15 +39,18 @@
 #include <string>
 #include <sstream>
 #include <stdlib.h>
+#include <io.h>
+#include <direct.h>
 #include "common/Util.h"
 
-
 using namespace std;
+
+
 
 #define LOG_COUT 0
 #define LOG_CERR 1
 
-extern void WriteLog(const string & str, int type);
+extern void WriteLog(const string & content, int type);
 
 #define COUT(V) \
 do{ ostringstream os ; \

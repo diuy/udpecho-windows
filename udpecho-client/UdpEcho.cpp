@@ -68,6 +68,7 @@ bool UdpEcho::start() {
 	allRecvSize = 0;
 	recvThread.reset(new thread(mem_fn(&UdpEcho::recvData), this));
 	sendThread.reset(new thread(mem_fn(&UdpEcho::sendData), this));
+	COUT("started!");
 	return true;
 }
 
@@ -83,6 +84,8 @@ void UdpEcho::stop() {
 	recvThread = nullptr;
 	sendThread = nullptr;
 	so = INVALID_SOCKET;
+	printResult();
+	COUT("stoped!");
 }
 
 void UdpEcho::sendData() {
@@ -99,7 +102,7 @@ void UdpEcho::sendData() {
 	int timeSpan = 0;
 	while (runFlag) {
 		timeSpan = (int)(GetTickCount()- startTime);
-		if ((allSendSize * 1000 / timeSpan) > speed) {
+		if (timeSpan>0 && (allSendSize * 1000 / timeSpan) > speed) {
 			Sleep(1);
 			continue;
 		}
@@ -135,7 +138,7 @@ void UdpEcho::recvData() {
 			}
 			break;
 		}
-		if (d[0] != 0xf1 || d[1] != 0xf2) {
+		if (d[0] != (char)0xf1 || d[1] != (char)0xf2) {
 			CERR("recv sync error");
 			continue;
 		}
@@ -147,6 +150,35 @@ void UdpEcho::recvData() {
 		}
 		allRecvCount++;
 		allRecvSize += recvSize;
+	}
+}
+
+void UdpEcho::printResult() {
+	int lastCount = allSendCount-allRecvCount  ;
+	int lastSize = allSendSize-allRecvSize  ;
+	double lastCountPercent = lastCount*100/ allSendCount;
+	double lastSizePercent = lastSize*100/allSendSize;
+
+
+
+	if (lastCountPercent >= 100) {
+		CERR("无法连接");
+	} else if (lastCountPercent > 20) {
+		CERR("丢包非常严重");
+	} else if (lastCountPercent > 10) {
+		COUT("丢包比较严重");
+	} else if (lastCountPercent > 5) {
+		COUT("网络比较流畅");
+	} else {
+		COUT("网络非常流畅");
+	}
+	if (lastCountPercent < 100) {
+		COUT("报告详情");
+
+		COUT("发送包数:" << allSendCount << ",发送流量:" << allSendSize);
+		COUT("接收包数:" << allRecvCount << ",接收流量:" << allRecvSize);
+		COUT("丢包数量:" << lastCount << ",丢包流量:" << lastSize);
+		COUT("丢包数量百分比:" << lastCountPercent << ",丢包流量百分比:" << lastSizePercent);
 	}
 }
 
