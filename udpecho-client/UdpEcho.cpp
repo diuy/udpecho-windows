@@ -3,9 +3,10 @@
 
 
 
-UdpEcho::UdpEcho(string ip, int port, int speed, int size)
-	:ip(ip), port(port), speed(speed), size(size)
-	, so(INVALID_SOCKET), runFlag(false) {
+UdpEcho::UdpEcho(string ip, int port, int speed, int size, int tag)
+	:ip(ip), port(port), speed(speed), size(size), tag(tag)
+	, so(INVALID_SOCKET), runFlag(false)
+	, allSendCount(0), allSendSize(0), allRecvCount(0), allRecvSize(0) {
 }
 
 UdpEcho::~UdpEcho() {
@@ -25,12 +26,12 @@ bool UdpEcho::start() {
 		return false;
 	}
 
-	if (speed<1 || speed > MAX_SPEED) {
+	if (speed<size || speed > MAX_SPEED) {
 		CERR("带宽设置错误 :" << speed);
 		return false;
 	}
 
-	if (size <1 || size > BUFFER_SIZE) {
+	if (size <MIN_SIZE || size > MAX_SIZE) {
 		CERR("大小设置错误 :" << size);
 		return false;
 	}
@@ -61,9 +62,13 @@ bool UdpEcho::start() {
 	}
 
 	runFlag = true;
-
-	recvThread.reset(new thread(mem_fn(&UdpEcho::recv), this));
-	sendThread.reset(new thread(mem_fn(&UdpEcho::send), this));
+	allSendCount = 0;
+	allSendSize = 0;
+	allRecvCount = 0;
+	allRecvSize = 0;
+	recvThread.reset(new thread(mem_fn(&UdpEcho::recvData), this));
+	sendThread.reset(new thread(mem_fn(&UdpEcho::sendData), this));
+	return true;
 }
 
 void UdpEcho::stop() {
@@ -80,9 +85,68 @@ void UdpEcho::stop() {
 	so = INVALID_SOCKET;
 }
 
-void UdpEcho::send() {
+void UdpEcho::sendData() {
+	string data(size*2, 0);
+	char* d = &data[0];
+	d[0] = (char)0xf1;
+	d[1] = (char) 0xf2;
+
+	*((int*)(d + 4)) = tag;
+	int index = 0;
+	int randSize = 0;
+	int sendSize = 0;
+	DWORD startTime = GetTickCount();
+	int timeSpan = 0;
+	while (runFlag) {
+		timeSpan = (int)(GetTickCount()- startTime);
+		if ((allSendSize * 1000 / timeSpan) > speed) {
+			Sleep(1);
+			continue;
+		}
+
+		index++;
+		*((int*)(d + 8)) = index;
+		randSize = rand() % size;
+		sendSize = ::send(so, &data[0], size+randSize, 0);
+		if (sendSize <= 0) {
+			if (runFlag) {
+				CERR("send fail,error:" << WSAGetLastError());
+			}
+			break;
+		}
+		allSendCount++;
+		allSendSize += sendSize;
+	}
 }
 
-void UdpEcho::recv() {
+void UdpEcho::recvData() {
+	string data(BUFFER_SIZE, 0);
+	int recvSize = 0;
+
+	int t;
+	int index;
+	const char * d = data.c_str();
+
+	while (runFlag) {
+		recvSize = ::recv(so, &data[0], BUFFER_SIZE, 0);
+		if (recvSize <= 0) {
+			if (runFlag) {
+				CERR("recv fail,error:"<<WSAGetLastError());
+			}
+			break;
+		}
+		if (d[0] != 0xf1 || d[1] != 0xf2) {
+			CERR("recv sync error");
+			continue;
+		}
+		t = *((int*)(d + 4));
+		index = *((int*)(d + 8));
+		if (t != tag) {
+			CERR("recv tag error," << tag);
+			continue;
+		}
+		allRecvCount++;
+		allRecvSize += recvSize;
+	}
 }
 

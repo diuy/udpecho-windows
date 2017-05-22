@@ -1,24 +1,42 @@
 #pragma once
 
+constexpr int MAX_SPEED = 1024 * 1024 * 100;//最大速度为100MB
+constexpr int RECV_TIMEOUT = 10000;//超时时间
+constexpr int BUFFER_SIZE = 1024 * 100;//收发缓存大小
+constexpr int HEAD_SIZE = 2 + 2 + 4 + 4;//命令包头大小
+constexpr int MAX_SIZE = BUFFER_SIZE/2;//发送包的最大值，会随机增加0-1倍的数据
+constexpr int MIN_SIZE = HEAD_SIZE;//发送包最小值
+
+//HEAD Content
+//2:SYNC=0xF1,0xF2
+//2:RESV
+//4:Tag
+//4:Index
+
 class UdpEcho {
 public:
-	UdpEcho(string ip,int port,int speed,int size);
+	UdpEcho(string ip,int port,int speed,int size,int tag);
 	~UdpEcho();
 	bool start();
 	void stop();
 private:
-	void send();
-	void recv();
+	void sendData();
+	void recvData();
 private:
 	const string ip;
 	const int port;
 	const int speed;
 	const int size;
-
+	const int tag;
 	unique_ptr<thread>	sendThread;
 	unique_ptr<thread>	recvThread;
 
 	bool runFlag;
 	SOCKET so;
+public:
+	int allSendCount;
+	int allSendSize;
+	int allRecvCount;
+	int allRecvSize;
 };
 

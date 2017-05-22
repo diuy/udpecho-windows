@@ -31,6 +31,8 @@ public:
 	afx_msg void OnBnClickedBtnStop();
 private:
 	CEdit textConsole;
+	int tag;
+	
 
 public:
 	afx_msg void OnDestroy();

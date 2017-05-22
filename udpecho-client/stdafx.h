@@ -37,14 +37,29 @@
 #include <thread>
 #include <iostream>
 #include <string>
+#include <sstream>
+#include <stdlib.h>
 #include "common/Util.h"
 
 
 using namespace std;
 
-constexpr int MAX_SPEED = 1024 * 1024 * 100;//最大速度为100MB
-constexpr int RECV_TIMEOUT = 10000;//超时时间
-constexpr int BUFFER_SIZE = 1024 * 100;//收发缓存大小
+#define LOG_COUT 0
+#define LOG_CERR 1
+
+extern void WriteLog(const string & str, int type);
+
+#define COUT(V) \
+do{ ostringstream os ; \
+	os<<V; \
+	WriteLog(os.str(),LOG_COUT);\
+}while (0)
+
+#define CERR(V) \
+do{ ostringstream os ; \
+	os<<V; \
+	WriteLog(os.str(),LOG_CERR);\
+}while (0)
 
 
 #ifdef _UNICODE

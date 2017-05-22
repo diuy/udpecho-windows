@@ -24,10 +24,10 @@
     <ClInclude Include="MainApp.h">
       <Filter>sys</Filter>
     </ClInclude>
-    <ClInclude Include="MainDlg.h">
-      <Filter>sys</Filter>
-    </ClInclude>
     <ClInclude Include="UdpEcho.h">
+      <Filter>main</Filter>
+    </ClInclude>
+    <ClInclude Include="MainDlg.h">
       <Filter>main</Filter>
     </ClInclude>
   </ItemGroup>
@@ -35,14 +35,14 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>sys</Filter>
     </ClCompile>
-    <ClCompile Include="MainApp.cpp">
-      <Filter>main</Filter>
-    </ClCompile>
     <ClCompile Include="MainDlg.cpp">
       <Filter>main</Filter>
     </ClCompile>
     <ClCompile Include="UdpEcho.cpp">
       <Filter>main</Filter>
+    </ClCompile>
+    <ClCompile Include="MainApp.cpp">
+      <Filter>sys</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

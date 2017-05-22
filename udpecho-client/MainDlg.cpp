@@ -12,6 +12,7 @@
 
 CMainDlg::CMainDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(IDD_UDPECHOCLIENT_DIALOG, pParent)
+	, tag(0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
@@ -43,6 +44,12 @@ static void Startup() {
 static void Cleanup() {
 	WSACleanup();
 }
+static CEdit *textConsole = NULL;
+static CStringA msg;
+
+void WriteLog(const string & str, int type) {
+
+}
 
 BOOL CMainDlg::OnInitDialog()
 {
@@ -51,7 +58,11 @@ BOOL CMainDlg::OnInitDialog()
 
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
-
+	srand((uint32_t)time(0));
+	while (tag == 0) {
+		tag = rand();
+	}
+	::textConsole = &this->textConsole;
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
