@@ -33,6 +33,7 @@ BEGIN_MESSAGE_MAP(CMainDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_START, &CMainDlg::OnBnClickedBtnStart)
 	ON_BN_CLICKED(IDC_BTN_STOP, &CMainDlg::OnBnClickedBtnStop)
 	ON_WM_DESTROY()
+	ON_BN_CLICKED(IDC_BTN_STOP_SEND, &CMainDlg::OnBnClickedBtnStopSend)
 END_MESSAGE_MAP()
 
 
@@ -51,8 +52,10 @@ static void Cleanup() {
 static CEdit *textConsole = NULL;
 static CString message;
 static FILE* logFile = NULL;
-static const char* iniFile = ".\\udpecho.ini";
 static int tag = -1;
+
+static CStringW exePath;
+static CStringA iniFile;
 
 void WriteLog(const string & content, int type) {
 	static const char* LEVEL[] = {"DEBUG", "ERROR" };
@@ -92,15 +95,21 @@ static void WriteConfig(string ip, int port, int speed, int size, int tag) {
 	WritePrivateProfileStringA("Config", "tag", IntToString(tag).c_str(), iniFile);
 }
 
-
 BOOL CMainDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
-	Startup();
 
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
+	Startup();
 
+	TCHAR strTemp[MAX_PATH ];
+	GetModuleFileName(NULL, strTemp, MAX_PATH);
+	(_tcsrchr(strTemp, _T('\\')))[0] = 0;//删除文件名，只获得路径
+	exePath = strTemp;
+
+	iniFile = CStringA(exePath);
+	iniFile.Append("\\udpecho.ini");
 	::textConsole = &this->textConsole;
 
 	string ip;
@@ -114,10 +123,11 @@ BOOL CMainDlg::OnInitDialog()
 	SetDlgItemText(IDC_TEXT_SIZE, CStringW(IntToString(size).c_str()));
 	SetDlgItemText(IDC_TEXT_TAG, CStringW(IntToString(tag).c_str()));
 
-	_mkdir(".\\log");
-	CStringA logFileName(CTime::GetCurrentTime().Format("log\\%Y%m%d.log"));
-	logFile = fopen(logFileName, "ab");
-
+	CStringA logFilePath= CStringA(exePath);
+	logFilePath.Append("\\log");
+	_mkdir(logFilePath);
+	logFilePath.Append(CStringA(CTime::GetCurrentTime().Format("\\%Y%m%d.log")));
+	logFile = fopen(logFilePath, "ab");
 	return TRUE;  
 }
 
@@ -209,11 +219,21 @@ void CMainDlg::OnBnClickedBtnStart() {
 	}
 }
 
+void CMainDlg::OnBnClickedBtnStopSend() {
+	if (echo) {
+		echo->stopSend();
+	}
+}
+
 
 void CMainDlg::OnBnClickedBtnStop() {
 	if (echo) {
 		echo->stop();
 		echo.reset();
+	}
+
+	if (logFile) {
+		fflush(logFile);
 	}
 }
 
@@ -226,3 +246,4 @@ void CMainDlg::OnDestroy() {
 	Cleanup();
 	CDialogEx::OnDestroy();
 }
+

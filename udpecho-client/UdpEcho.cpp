@@ -5,7 +5,7 @@
 
 UdpEcho::UdpEcho(string ip, int port, int speed, int size, int tag)
 	:ip(ip), port(port), speed(speed), size(size), tag(tag)
-	, so(INVALID_SOCKET), runFlag(false)
+	, so(INVALID_SOCKET), sendRunFlag(false),recvRunFlag(false)
 	, allSendCount(0), allSendSize(0), allRecvCount(0), allRecvSize(0) {
 }
 
@@ -14,7 +14,7 @@ UdpEcho::~UdpEcho() {
 }
 
 bool UdpEcho::start() {
-	if (runFlag)
+	if (sendRunFlag || recvRunFlag)
 		return true;
 	if (ip.empty()) {
 		CERR("IP地址不能为空");
@@ -61,7 +61,7 @@ bool UdpEcho::start() {
 		return false;
 	}
 
-	runFlag = true;
+	sendRunFlag = recvRunFlag = true;
 	allSendCount = 0;
 	allSendSize = 0;
 	allRecvCount = 0;
@@ -72,10 +72,19 @@ bool UdpEcho::start() {
 	return true;
 }
 
-void UdpEcho::stop() {
-	if (!runFlag)
+void UdpEcho::stopSend() {
+	if (!sendRunFlag )
 		return;
-	runFlag = false;
+	sendRunFlag = false;
+	COUT("send stoped!");
+}
+
+void UdpEcho::stop() {
+
+	if (!sendRunFlag && !recvRunFlag)
+		return;
+	sendRunFlag = recvRunFlag = false;
+
 	//shutdown(so, SD_BOTH);
 	closesocket(so);
 	recvThread->join();
@@ -85,7 +94,7 @@ void UdpEcho::stop() {
 	sendThread = nullptr;
 	so = INVALID_SOCKET;
 	printResult();
-	COUT("stoped!");
+	COUT("stoped!\r\n");
 }
 
 void UdpEcho::sendData() {
@@ -100,7 +109,7 @@ void UdpEcho::sendData() {
 	int sendSize = 0;
 	DWORD startTime = GetTickCount();
 	int timeSpan = 0;
-	while (runFlag) {
+	while (sendRunFlag) {
 		timeSpan = (int)(GetTickCount()- startTime);
 		if (timeSpan>0 && (allSendSize * 1000 / timeSpan) > speed) {
 			Sleep(1);
@@ -112,7 +121,7 @@ void UdpEcho::sendData() {
 		randSize = rand() % size;
 		sendSize = ::send(so, &data[0], size+randSize, 0);
 		if (sendSize <= 0) {
-			if (runFlag) {
+			if (sendRunFlag) {
 				CERR("send fail,error:" << WSAGetLastError());
 			}
 			break;
@@ -130,10 +139,10 @@ void UdpEcho::recvData() {
 	int index;
 	const char * d = data.c_str();
 
-	while (runFlag) {
+	while (recvRunFlag) {
 		recvSize = ::recv(so, &data[0], BUFFER_SIZE, 0);
 		if (recvSize <= 0) {
-			if (runFlag) {
+			if (recvRunFlag) {
 				CERR("recv fail,error:"<<WSAGetLastError());
 			}
 			break;

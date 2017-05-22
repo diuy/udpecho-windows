@@ -18,6 +18,7 @@ public:
 	UdpEcho(string ip,int port,int speed,int size,int tag);
 	~UdpEcho();
 	bool start();
+	void stopSend();
 	void stop();
 private:
 	void sendData();
@@ -32,7 +33,9 @@ private:
 	unique_ptr<thread>	sendThread;
 	unique_ptr<thread>	recvThread;
 
-	bool runFlag;
+	bool sendRunFlag;
+	bool recvRunFlag;
+
 	SOCKET so;
 public:
 	int allSendCount;
