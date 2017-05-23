@@ -194,20 +194,51 @@ void UdpEcho::printResult() {
 		COUT("接收包数:" << allRecvCount << ",接收流量:" << allRecvSize);
 		COUT("丢包数量:" << lastCount << ",丢包流量:" << lastSize);
 		COUT("丢包数量百分比:" << setiosflags(ios::fixed) << setprecision(2)<<
-			lastCountPercent << ",丢包流量百分比:" << setiosflags(ios::fixed) << setprecision(2) << lastSizePercent);
-		map<DWORD, int> times;
+			lastCountPercent << "%,丢包流量百分比:" << setiosflags(ios::fixed) << setprecision(2) << lastSizePercent<<"%");
+		
+		
+		map<pair<DWORD, DWORD>, int> times;
+		times[pair<DWORD, DWORD>(0, 10)] = 0;
+		times[pair<DWORD, DWORD>(10, 20)] = 0;
+		times[pair<DWORD, DWORD>(20, 50)] = 0;
+		times[pair<DWORD, DWORD>(50, 100)] = 0;
+		times[pair<DWORD, DWORD>(100, 150)] = 0;
+		times[pair<DWORD, DWORD>(150, 200)] = 0;
+		times[pair<DWORD, DWORD>(200, 300)] = 0;
+		times[pair<DWORD, DWORD>(300, 500)] = 0;
+		times[pair<DWORD, DWORD>(500, 700)] = 0;
+		times[pair<DWORD, DWORD>(700, 1000)] = 0;
+		times[pair<DWORD, DWORD>(1000, 1500)] = 0;
+		times[pair<DWORD, DWORD>(1500, 2000)] = 0;
+		times[pair<DWORD, DWORD>(2000, 3000)] = 0;
+		times[pair<DWORD, DWORD>(3000, 4000)] = 0;
+		times[pair<DWORD, DWORD>(4000, 5000)] = 0;
+		times[pair<DWORD, DWORD>(5000, 7000)] = 0;
+		times[pair<DWORD, DWORD>(7000, 10000)] = 0;
+		times[pair<DWORD, DWORD>(10000, 1000000000)] = 0;
+
+
+	
 		for (auto item = recvTimes.begin(); item != recvTimes.end(); item++) {
 			DWORD t = item->second - sendTimes[item->first];
-			times[t/10]++;
+			for (auto item1 = times.begin(); item1 != times.end(); item1++) {
+				if (t >= item1->first.first && t < item1->first.second) {
+					item1->second++;
+					break;
+				}
+			}
 		}
 		COUT("接收数据包详情");
 		for (auto item = times.begin(); item != times.end(); item++) {
-			DWORD d1 = item->first * 10;
-			DWORD d2 = (item->first+1) * 10;
-			double p = item->second*100.0 / allRecvCount;
-			COUT("[" << setw(4) << setfill('0') << d1 << "," 
-				<< setw(4) << setfill('0') << d2 << ")数量:" << setw(5) << setfill('0')<<item->second
-				<<",百分比:"<<setw(5) << setfill('0')<< setiosflags(ios::fixed)<<setprecision(2) << p<<"%");
+			DWORD d1 = item->first.first;
+			DWORD d2 = item->first.second;
+			int count = item->second;
+			if (count > 0) {
+				double p = count*100.0 / allRecvCount;
+				COUT("时间(毫秒):[" << setw(4) << setfill('0') << d1 << ","
+					<< setw(4) << setfill('0') << d2 << "),包数量:" << setw(5) << setfill('0') << count
+					<< ",百分比:" << setw(5) << setfill('0') << setiosflags(ios::fixed) << setprecision(2) << p << "%");
+			}
 		}
 	}
 }
