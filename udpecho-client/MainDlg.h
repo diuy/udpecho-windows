@@ -34,5 +34,7 @@ private:
 	unique_ptr<UdpEcho> echo;
 public:
 	afx_msg void OnDestroy();
-	afx_msg void OnBnClickedBtnStopSend();
+	CButton btnStart;
+	CButton btnStop;
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 };

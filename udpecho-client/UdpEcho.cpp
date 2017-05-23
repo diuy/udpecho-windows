@@ -168,8 +168,6 @@ void UdpEcho::printResult() {
 	double lastCountPercent = lastCount*100/ allSendCount;
 	double lastSizePercent = lastSize*100/allSendSize;
 
-
-
 	if (lastCountPercent >= 100) {
 		CERR("无法连接");
 	} else if (lastCountPercent > 20) {
@@ -182,8 +180,6 @@ void UdpEcho::printResult() {
 		COUT("网络非常流畅");
 	}
 	if (lastCountPercent < 100) {
-		COUT("报告详情");
-
 		COUT("发送包数:" << allSendCount << ",发送流量:" << allSendSize);
 		COUT("接收包数:" << allRecvCount << ",接收流量:" << allRecvSize);
 		COUT("丢包数量:" << lastCount << ",丢包流量:" << lastSize);

@@ -25,6 +25,8 @@ void CMainDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_TEXT_CONSOLE, textConsole);
+	DDX_Control(pDX, IDC_BTN_START, btnStart);
+	DDX_Control(pDX, IDC_BTN_STOP, btnStop);
 }
 
 BEGIN_MESSAGE_MAP(CMainDlg, CDialogEx)
@@ -33,7 +35,7 @@ BEGIN_MESSAGE_MAP(CMainDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BTN_START, &CMainDlg::OnBnClickedBtnStart)
 	ON_BN_CLICKED(IDC_BTN_STOP, &CMainDlg::OnBnClickedBtnStop)
 	ON_WM_DESTROY()
-	ON_BN_CLICKED(IDC_BTN_STOP_SEND, &CMainDlg::OnBnClickedBtnStopSend)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -216,20 +218,16 @@ void CMainDlg::OnBnClickedBtnStart() {
 	echo.reset(new UdpEcho(ip, port, speed, size, tag));
 	if (echo->start()) {
 		WriteConfig(ip, port, speed, size, tag);
-	}
-}
-
-void CMainDlg::OnBnClickedBtnStopSend() {
-	if (echo) {
-		echo->stopSend();
+		btnStart.EnableWindow(FALSE);
 	}
 }
 
 
 void CMainDlg::OnBnClickedBtnStop() {
 	if (echo) {
-		echo->stop();
-		echo.reset();
+		echo->stopSend();
+		SetTimer(1000, 3000, NULL);
+		btnStop.EnableWindow(FALSE);
 	}
 
 	if (logFile) {
@@ -247,3 +245,20 @@ void CMainDlg::OnDestroy() {
 	CDialogEx::OnDestroy();
 }
 
+
+
+void CMainDlg::OnTimer(UINT_PTR nIDEvent) {
+
+	KillTimer(1000);
+	if (echo) {
+		echo->stop();
+		echo.reset();
+	}
+	if (logFile) {
+		fflush(logFile);
+	}
+	btnStart.EnableWindow(TRUE);
+	btnStop.EnableWindow(TRUE);
+
+	CDialogEx::OnTimer(nIDEvent);
+}

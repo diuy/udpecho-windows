@@ -2,6 +2,7 @@
 #include <cassert>
 #include <signal.h>
 #include <winsock2.h>
+#include <map>
 
 #include "common/Util.h"
 #pragma comment(lib,"ws2_32.lib")
@@ -17,6 +18,8 @@ constexpr int BUFFER_SIZE = 1024*100;//收发缓存大小
 #define CERR(V) std::cerr<<nowTimeStr()<<": "<<V<<endl
 
 SOCKET _socket = INVALID_SOCKET;
+
+map<int, int> recvInfos;
 
 bool Open(int port) {
 
@@ -66,12 +69,16 @@ bool Open(int port) {
 	return true;
 }
 
+
+
 void Work() {
 	uint8_t *buff = new uint8_t[BUFFER_SIZE];
 	int recvSize;
 	int sendSize;
 	struct sockaddr_in addrFrom;
 	int fromLen = 0;
+	int tag;
+	//int index;
 	while (true) {
 		fromLen = sizeof(addrFrom);
 		recvSize = recvfrom(_socket, (char*)buff, BUFFER_SIZE, 0, (struct sockaddr *)&addrFrom, &fromLen);
@@ -80,8 +87,14 @@ void Work() {
 			break;
 		}
 		if (recvSize < 0) {
-			
+			for (auto item = recvInfos.begin(); item != recvInfos.end(); item++) {
+				COUT ("tag:" << (item->first)<<",count:"<<item->second);
+			}
+			recvInfos.clear();
 		} else {
+			tag = *((int*)(buff + 4));
+			//index = *((int*)(buff + 8));
+			recvInfos[tag]++;
 			sendSize = sendto(_socket, (char*)buff, recvSize, 0, (struct sockaddr *)&addrFrom, sizeof(addrFrom));
 			if (sendSize <= 0) {
 				CERR("send failed, ip:" << inet_ntoa(addrFrom.sin_addr) << ",port:" << addrFrom.sin_port << ",ret:"<< sendSize);
@@ -103,13 +116,26 @@ void Handler(int sig) {
 	}
 }
 
+string readAllInput() {
+	char c;
+	string str;
+	while ((c = cin.get()) != '\n') {
+		str.push_back(c);
+	}
+
+	return str;
+}
+
 int main(int argc, char* argv[]) {
 	signal(SIGINT, Handler);
-	int k = StringToInt("ddd",22);
 	 
 	int port = DEFAULT_PORT;
 	if (argc > 1)
 		port = StringToInt(argv[1], DEFAULT_PORT);
+
+	cout<<"input port("<<port<<"):";
+	string str = readAllInput();
+	port = StringToInt(str.c_str(), port);
 
 	if (!Open(port))
 		return -1;
