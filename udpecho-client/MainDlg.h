@@ -33,8 +33,8 @@ private:
 	CEdit textConsole;
 	unique_ptr<UdpEcho> echo;
 public:
-	afx_msg void OnDestroy();
 	CButton btnStart;
 	CButton btnStop;
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnClose();
 };

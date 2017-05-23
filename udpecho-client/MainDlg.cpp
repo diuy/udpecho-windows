@@ -34,8 +34,8 @@ BEGIN_MESSAGE_MAP(CMainDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BTN_START, &CMainDlg::OnBnClickedBtnStart)
 	ON_BN_CLICKED(IDC_BTN_STOP, &CMainDlg::OnBnClickedBtnStop)
-	ON_WM_DESTROY()
 	ON_WM_TIMER()
+	ON_WM_CLOSE()
 END_MESSAGE_MAP()
 
 
@@ -58,6 +58,7 @@ static int tag = -1;
 
 static CStringW exePath;
 static CStringA iniFile;
+static CStringA logFilePath;
 
 void WriteLog(const string & content, int type) {
 	static const char* LEVEL[] = {"DEBUG", "ERROR" };
@@ -125,7 +126,7 @@ BOOL CMainDlg::OnInitDialog()
 	SetDlgItemText(IDC_TEXT_SIZE, CStringW(IntToString(size).c_str()));
 	SetDlgItemText(IDC_TEXT_TAG, CStringW(IntToString(tag).c_str()));
 
-	CStringA logFilePath= CStringA(exePath);
+	logFilePath= CStringA(exePath);
 	logFilePath.Append("\\udpecho-client");
 	_mkdir(logFilePath);
 	logFilePath.Append(CStringA(CTime::GetCurrentTime().Format("\\%Y%m%d.log")));
@@ -219,6 +220,9 @@ void CMainDlg::OnBnClickedBtnStart() {
 	if (echo->start()) {
 		WriteConfig(ip, port, speed, size, tag);
 		btnStart.EnableWindow(FALSE);
+		SetTimer(999, 60 * 1000, NULL);
+	} else {
+		echo.reset();
 	}
 }
 
@@ -236,29 +240,38 @@ void CMainDlg::OnBnClickedBtnStop() {
 }
 
 
-void CMainDlg::OnDestroy() {
-	if (logFile) {
-		fclose(logFile);
-		logFile = NULL;
+void CMainDlg::OnTimer(UINT_PTR nIDEvent) {
+
+	KillTimer(nIDEvent);
+	if (nIDEvent == 999) {
+		OnBnClickedBtnStop();
+	} else if (nIDEvent == 1000) {
+		if (echo) {
+			echo->stop();
+			echo.reset();
+		}
+		if (logFile) {
+			fflush(logFile);
+		}
+		COUT("日志文件路径:" << logFilePath<<"\r\n");
+		btnStart.EnableWindow(TRUE);
+		btnStop.EnableWindow(TRUE);
 	}
-	Cleanup();
-	CDialogEx::OnDestroy();
+	
+
+	CDialogEx::OnTimer(nIDEvent);
 }
 
 
-
-void CMainDlg::OnTimer(UINT_PTR nIDEvent) {
-
-	KillTimer(1000);
+void CMainDlg::OnClose() {
 	if (echo) {
 		echo->stop();
 		echo.reset();
 	}
 	if (logFile) {
-		fflush(logFile);
+		fclose(logFile);
+		logFile = NULL;
 	}
-	btnStart.EnableWindow(TRUE);
-	btnStop.EnableWindow(TRUE);
-
-	CDialogEx::OnTimer(nIDEvent);
+	Cleanup();
+	CDialogEx::OnClose();
 }

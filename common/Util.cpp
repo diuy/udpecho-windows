@@ -39,3 +39,7 @@ std::string IntToString(int i) {
 
 	return os.str();
 }
+
+int rand(int min, int max) {
+	return (rand() % (max - min))+ min;
+}

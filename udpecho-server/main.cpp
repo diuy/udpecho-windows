@@ -12,7 +12,7 @@
 using namespace std;
 
 constexpr int DEFAULT_PORT = 40000;//默认端口
-constexpr int RECV_TIMEOUT = 10000;//超时时间
+constexpr int RECV_TIMEOUT = 2000;//超时时间
 constexpr int BUFFER_SIZE = 1024*100;//收发缓存大小
 
 
@@ -99,7 +99,7 @@ void Work() {
 			recvInfos[tag]++;
 			sendSize = sendto(_socket, (char*)buff, recvSize, 0, (struct sockaddr *)&addrFrom, sizeof(addrFrom));
 			if (sendSize <= 0) {
-				CERR("send failed, ip:" << inet_ntoa(addrFrom.sin_addr) << ",port:" << addrFrom.sin_port << ",ret:"<< sendSize);
+				CERR("send failed, ip:" << inet_ntoa(addrFrom.sin_addr) << ",port:" << ntohs(addrFrom.sin_port) << ",ret:"<< sendSize);
 			}
 		}
 	}
@@ -130,7 +130,12 @@ string readAllInput() {
 
 int main(int argc, char* argv[]) {
 	signal(SIGINT, Handler);
-	 
+
+	//while (true) {
+	//	int k = rand(-2, 2);
+	//	cout << k;
+	//}
+
 	int port = -1;
 	if (argc > 1)
 		port = StringToInt(argv[1], port);

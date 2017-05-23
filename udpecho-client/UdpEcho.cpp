@@ -6,7 +6,7 @@
 UdpEcho::UdpEcho(string ip, int port, int speed, int size, int tag)
 	:ip(ip), port(port), speed(speed), size(size), tag(tag)
 	, so(INVALID_SOCKET), sendRunFlag(false),recvRunFlag(false)
-	, allSendCount(0), allSendSize(0), allRecvCount(0), allRecvSize(0) {
+	, allSendCount(0), allSendSize(0), allRecvCount(0), allRecvSize(0), _startTime(0), _stopTime(0){
 }
 
 UdpEcho::~UdpEcho() {
@@ -22,17 +22,21 @@ bool UdpEcho::start() {
 	}
 
 	if (port <= 0 || port >= 65535) {
-		CERR("端口设置错误 :" << port);
+		CERR("端口设置错误 :" << port<<",范围:(0,65535)");
 		return false;
 	}
-
-	if (speed<size || speed > MAX_SPEED) {
-		CERR("带宽设置错误 :" << speed);
-		return false;
-	}
-
 	if (size <MIN_SIZE || size > MAX_SIZE) {
-		CERR("大小设置错误 :" << size);
+		CERR("大小设置错误 :" << size<<",范围:["<< MIN_SIZE<<","<<MAX_SIZE<<"]");
+		return false;
+	}
+
+	if (speed<size) {
+		CERR("(带宽)不能小于(大小)值 :" << speed);
+		return false;
+	}
+
+	if ( speed > MAX_SPEED) {
+		CERR("带宽设置错误 :" << speed<<",最大值:"<<MAX_SPEED);
 		return false;
 	}
 
@@ -57,7 +61,7 @@ bool UdpEcho::start() {
 	if (ret != 0) {
 		closesocket(so); //关闭套接字
 		so = INVALID_SOCKET;
-		CERR("connect fail,ip:" << inet_ntoa(addr.sin_addr) << ",port:" << addr.sin_port << ",ret:" << ret);
+		CERR("connect fail,ip:" << ip << ",port:" << port << ",ret:" << ret);
 		return false;
 	}
 
@@ -67,17 +71,20 @@ bool UdpEcho::start() {
 	allSendSize = 0;
 	allRecvCount = 0;
 	allRecvSize = 0;
+	_startTime = GetTickCount();
 	recvThread.reset(new thread(mem_fn(&UdpEcho::recvData), this));
 	sendThread.reset(new thread(mem_fn(&UdpEcho::sendData), this));
-	COUT("started, ip:" << inet_ntoa(addr.sin_addr) << ", port : " << addr.sin_port<<
+	COUT("started!");
+	COUT("ip:" << ip << ",port:" << port <<
 	",tag:"<<tag);
-
+	COUT("speed:" << speed << ",size:" << size << ",countPerSecond:" << setiosflags(ios::fixed) << setprecision(2)<<speed*1.0 / size);
 	return true;
 }
 
 void UdpEcho::stopSend() {
 	if (!sendRunFlag )
 		return;
+	_stopTime = GetTickCount();
 	sendRunFlag = false;
 	COUT("send stoped!");
 }
@@ -97,7 +104,7 @@ void UdpEcho::stop() {
 	sendThread = nullptr;
 	so = INVALID_SOCKET;
 	printResult();
-	COUT("stoped!\r\n");
+	COUT("stoped!");
 }
 
 void UdpEcho::sendData() {
@@ -108,23 +115,35 @@ void UdpEcho::sendData() {
 
 	*((int*)(d + 4)) = tag;
 	int index = 0;
-	int randSize = 0;
+	int realSize = 0;
 	int sendSize = 0;
 	DWORD startTime = GetTickCount();
 	DWORD nowTime;
 	int timeSpan = 0;
+
 	while (sendRunFlag) {
 		nowTime = GetTickCount();
 		timeSpan = (int)(nowTime - startTime);
+	
 		if (timeSpan>0 && (allSendSize * 1000 / timeSpan) > speed) {
 			Sleep(1);
 			continue;
 		}
 
 		*((int*)(d + 8)) = index;
-		randSize = rand() % size;
+		realSize = size;// +rand(-size / 3, size / 3);//随机把包大小加减1/3
+		if (realSize < MIN_SIZE) {
+			realSize = MIN_SIZE;
+		} else if (realSize > MAX_SIZE) {
+			realSize = MAX_SIZE;
+		}
+		//修改三个字节的为随机值
+		data[rand(MIN_SIZE, realSize)] = (char)rand(1, 255);
+		data[rand(MIN_SIZE, realSize)] = (char)rand(1, 255);
+		data[rand(MIN_SIZE, realSize)] = (char)rand(1, 255);
+
 		sendTimes[index] = nowTime;
-		sendSize = ::send(so, &data[0], size+randSize, 0);
+		sendSize = ::send(so, &data[0], realSize, 0);
 		if (sendSize <= 0) {
 			if (sendRunFlag) {
 				CERR("send fail,error:" << WSAGetLastError());
@@ -175,8 +194,12 @@ void UdpEcho::recvData() {
 void UdpEcho::printResult() {
 	int lastCount = allSendCount-allRecvCount  ;
 	int lastSize = allSendSize-allRecvSize  ;
-	double lastCountPercent = lastCount*100/ allSendCount;
-	double lastSizePercent = lastSize*100/allSendSize;
+	double lastCountPercent = lastCount*100.00/ allSendCount;
+	double lastSizePercent = lastSize*100.00/allSendSize;
+	double sendCountPerSecond = allSendCount*1000.0 / (_stopTime -_startTime);
+	double sendSizePerSecond = allSendSize*1000.0 / (_stopTime - _startTime);
+
+	COUT("发送时间(毫秒):" << _stopTime - _startTime);
 
 	if (lastCountPercent >= 100) {
 		CERR("无法连接");
@@ -184,14 +207,14 @@ void UdpEcho::printResult() {
 		CERR("丢包非常严重");
 	} else if (lastCountPercent > 10) {
 		COUT("丢包比较严重");
-	} else if (lastCountPercent > 5) {
-		COUT("网络比较流畅");
-	} else {
-		COUT("网络非常流畅");
-	}
+	} 
 	if (lastCountPercent < 100) {
+
 		COUT("发送包数:" << allSendCount << ",发送流量:" << allSendSize);
 		COUT("接收包数:" << allRecvCount << ",接收流量:" << allRecvSize);
+		COUT("每秒发送包数:" << setiosflags(ios::fixed) << setprecision(2)<<sendCountPerSecond <<
+			",每秒发送流量:" << setiosflags(ios::fixed) << setprecision(2)<<sendSizePerSecond);
+
 		COUT("丢包数量:" << lastCount << ",丢包流量:" << lastSize);
 		COUT("丢包数量百分比:" << setiosflags(ios::fixed) << setprecision(2)<<
 			lastCountPercent << "%,丢包流量百分比:" << setiosflags(ios::fixed) << setprecision(2) << lastSizePercent<<"%");
