@@ -2,6 +2,8 @@
 #include <cassert>
 #include <signal.h>
 #include <winsock2.h>
+#include <iostream>
+#include <iomanip>
 #include <map>
 
 #include "common/Util.h"
@@ -129,13 +131,15 @@ string readAllInput() {
 int main(int argc, char* argv[]) {
 	signal(SIGINT, Handler);
 	 
-	int port = DEFAULT_PORT;
+	int port = -1;
 	if (argc > 1)
-		port = StringToInt(argv[1], DEFAULT_PORT);
+		port = StringToInt(argv[1], port);
 
-	cout<<"input port("<<port<<"):";
-	string str = readAllInput();
-	port = StringToInt(str.c_str(), port);
+	if (port < 0) {
+		cout << "input port(" << DEFAULT_PORT << "):";
+		string str = readAllInput();
+		port = StringToInt(str.c_str(), DEFAULT_PORT);
+	}
 
 	if (!Open(port))
 		return -1;

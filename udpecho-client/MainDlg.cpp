@@ -11,7 +11,7 @@
 #define DEFAULT_IP "172.20.2.220"
 #define DEFAULT_PORT 40000
 #define DEFAULT_SPEED 1000*50
-#define DEFAULT_SIZE 200
+#define DEFAULT_SIZE 2000
 
 
 
@@ -65,7 +65,7 @@ void WriteLog(const string & content, int type) {
 	CStringA  str(CTime::GetCurrentTime().Format("%Y-%m-%d %H:%M:%S"));
 	str.AppendFormat(": %s: %s\r\n", LEVEL[type], content.c_str());
 
-	TRACE(str);
+	OutputDebugStringA(str);
 
 	message.Append(CString(str));
 	textConsole->SetWindowText(message);
@@ -111,7 +111,7 @@ BOOL CMainDlg::OnInitDialog()
 	exePath = strTemp;
 
 	iniFile = CStringA(exePath);
-	iniFile.Append("\\udpecho.ini");
+	iniFile.Append("\\udpecho-client.ini");
 	::textConsole = &this->textConsole;
 
 	string ip;
@@ -126,7 +126,7 @@ BOOL CMainDlg::OnInitDialog()
 	SetDlgItemText(IDC_TEXT_TAG, CStringW(IntToString(tag).c_str()));
 
 	CStringA logFilePath= CStringA(exePath);
-	logFilePath.Append("\\log");
+	logFilePath.Append("\\udpecho-client");
 	_mkdir(logFilePath);
 	logFilePath.Append(CStringA(CTime::GetCurrentTime().Format("\\%Y%m%d.log")));
 	logFile = fopen(logFilePath, "ab");

@@ -38,6 +38,10 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <map>
+#include <list>
+#include <iomanip>
+#include <algorithm>
 #include <stdlib.h>
 #include <io.h>
 #include <direct.h>

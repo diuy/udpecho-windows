@@ -61,6 +61,7 @@ bool UdpEcho::start() {
 		return false;
 	}
 
+
 	sendRunFlag = recvRunFlag = true;
 	allSendCount = 0;
 	allSendSize = 0;
@@ -68,7 +69,9 @@ bool UdpEcho::start() {
 	allRecvSize = 0;
 	recvThread.reset(new thread(mem_fn(&UdpEcho::recvData), this));
 	sendThread.reset(new thread(mem_fn(&UdpEcho::sendData), this));
-	COUT("started!");
+	COUT("started, ip:" << inet_ntoa(addr.sin_addr) << ", port : " << addr.sin_port<<
+	",tag:"<<tag);
+
 	return true;
 }
 
@@ -108,17 +111,19 @@ void UdpEcho::sendData() {
 	int randSize = 0;
 	int sendSize = 0;
 	DWORD startTime = GetTickCount();
+	DWORD nowTime;
 	int timeSpan = 0;
 	while (sendRunFlag) {
-		timeSpan = (int)(GetTickCount()- startTime);
+		nowTime = GetTickCount();
+		timeSpan = (int)(nowTime - startTime);
 		if (timeSpan>0 && (allSendSize * 1000 / timeSpan) > speed) {
 			Sleep(1);
 			continue;
 		}
 
-		index++;
 		*((int*)(d + 8)) = index;
 		randSize = rand() % size;
+		sendTimes[index] = nowTime;
 		sendSize = ::send(so, &data[0], size+randSize, 0);
 		if (sendSize <= 0) {
 			if (sendRunFlag) {
@@ -128,6 +133,7 @@ void UdpEcho::sendData() {
 		}
 		allSendCount++;
 		allSendSize += sendSize;
+		index++;
 	}
 }
 
@@ -138,9 +144,12 @@ void UdpEcho::recvData() {
 	int t;
 	int index;
 	const char * d = data.c_str();
+	DWORD nowTime;
 
 	while (recvRunFlag) {
 		recvSize = ::recv(so, &data[0], BUFFER_SIZE, 0);
+		nowTime = GetTickCount();
+
 		if (recvSize <= 0) {
 			if (recvRunFlag) {
 				CERR("recv fail,error:"<<WSAGetLastError());
@@ -153,6 +162,7 @@ void UdpEcho::recvData() {
 		}
 		t = *((int*)(d + 4));
 		index = *((int*)(d + 8));
+		recvTimes[index] = nowTime;
 		if (t != tag) {
 			CERR("recv tag error," << tag);
 			continue;
@@ -183,7 +193,22 @@ void UdpEcho::printResult() {
 		COUT("发送包数:" << allSendCount << ",发送流量:" << allSendSize);
 		COUT("接收包数:" << allRecvCount << ",接收流量:" << allRecvSize);
 		COUT("丢包数量:" << lastCount << ",丢包流量:" << lastSize);
-		COUT("丢包数量百分比:" << lastCountPercent << ",丢包流量百分比:" << lastSizePercent);
+		COUT("丢包数量百分比:" << setiosflags(ios::fixed) << setprecision(2)<<
+			lastCountPercent << ",丢包流量百分比:" << setiosflags(ios::fixed) << setprecision(2) << lastSizePercent);
+		map<DWORD, int> times;
+		for (auto item = recvTimes.begin(); item != recvTimes.end(); item++) {
+			DWORD t = item->second - sendTimes[item->first];
+			times[t/10]++;
+		}
+		COUT("接收数据包详情");
+		for (auto item = times.begin(); item != times.end(); item++) {
+			DWORD d1 = item->first * 10;
+			DWORD d2 = (item->first+1) * 10;
+			double p = item->second*100.0 / allRecvCount;
+			COUT("[" << setw(4) << setfill('0') << d1 << "," 
+				<< setw(4) << setfill('0') << d2 << ")数量:" << setw(5) << setfill('0')<<item->second
+				<<",百分比:"<<setw(5) << setfill('0')<< setiosflags(ios::fixed)<<setprecision(2) << p<<"%");
+		}
 	}
 }
 

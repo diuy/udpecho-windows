@@ -37,10 +37,12 @@ private:
 	bool recvRunFlag;
 
 	SOCKET so;
-public:
+private:
 	int allSendCount;
 	int allSendSize;
 	int allRecvCount;
 	int allRecvSize;
+	map<int, DWORD> sendTimes;
+	map<int, DWORD> recvTimes;
 };
 
