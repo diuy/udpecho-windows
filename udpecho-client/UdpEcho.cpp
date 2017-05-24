@@ -71,7 +71,7 @@ bool UdpEcho::start() {
 	allSendSize = 0;
 	allRecvCount = 0;
 	allRecvSize = 0;
-	_startTime = GetTickCount();
+	_startTime = GetNowTime();
 	recvThread.reset(new thread(mem_fn(&UdpEcho::recvData), this));
 	sendThread.reset(new thread(mem_fn(&UdpEcho::sendData), this));
 	COUT("started!");
@@ -84,7 +84,7 @@ bool UdpEcho::start() {
 void UdpEcho::stopSend() {
 	if (!sendRunFlag )
 		return;
-	_stopTime = GetTickCount();
+	_stopTime = GetNowTime();
 	sendRunFlag = false;
 	COUT("send stoped!");
 }
@@ -117,13 +117,13 @@ void UdpEcho::sendData() {
 	int index = 0;
 	int realSize = 0;
 	int sendSize = 0;
-	DWORD startTime = GetTickCount();
-	DWORD nowTime;
-	int timeSpan = 0;
+	uint64_t startTime = GetNowTime();
+	uint64_t nowTime;
+	uint64_t timeSpan = 0;
 
 	while (sendRunFlag) {
-		nowTime = GetTickCount();
-		timeSpan = (int)(nowTime - startTime);
+		nowTime = GetNowTime();
+		timeSpan = (nowTime - startTime);
 	
 		if (timeSpan>0 && (allSendSize * 1000 / timeSpan) > speed) {
 			Sleep(1);
@@ -163,11 +163,11 @@ void UdpEcho::recvData() {
 	int t;
 	int index;
 	const char * d = data.c_str();
-	DWORD nowTime;
+	uint64_t nowTime;
 
 	while (recvRunFlag) {
 		recvSize = ::recv(so, &data[0], BUFFER_SIZE, 0);
-		nowTime = GetTickCount();
+		nowTime = GetNowTime();
 
 		if (recvSize <= 0) {
 			if (recvRunFlag) {
@@ -192,8 +192,8 @@ void UdpEcho::recvData() {
 }
 
 void UdpEcho::printResult() {
-	int lastCount = allSendCount-allRecvCount  ;
-	int lastSize = allSendSize-allRecvSize  ;
+	uint64_t lastCount = allSendCount-allRecvCount  ;
+	uint64_t lastSize = allSendSize-allRecvSize  ;
 	double lastCountPercent = lastCount*100.00/ allSendCount;
 	double lastSizePercent = lastSize*100.00/allSendSize;
 	double sendCountPerSecond = allSendCount*1000.0 / (_stopTime -_startTime);
@@ -225,30 +225,30 @@ void UdpEcho::printResult() {
 			lastCountPercent << "%,丢包流量百分比:" << setiosflags(ios::fixed) << setprecision(2) << lastSizePercent<<"%");
 		
 		
-		map<pair<DWORD, DWORD>, int> times;
-		times[pair<DWORD, DWORD>(0, 10)] = 0;
-		times[pair<DWORD, DWORD>(10, 20)] = 0;
-		times[pair<DWORD, DWORD>(20, 50)] = 0;
-		times[pair<DWORD, DWORD>(50, 100)] = 0;
-		times[pair<DWORD, DWORD>(100, 150)] = 0;
-		times[pair<DWORD, DWORD>(150, 200)] = 0;
-		times[pair<DWORD, DWORD>(200, 300)] = 0;
-		times[pair<DWORD, DWORD>(300, 500)] = 0;
-		times[pair<DWORD, DWORD>(500, 700)] = 0;
-		times[pair<DWORD, DWORD>(700, 1000)] = 0;
-		times[pair<DWORD, DWORD>(1000, 1500)] = 0;
-		times[pair<DWORD, DWORD>(1500, 2000)] = 0;
-		times[pair<DWORD, DWORD>(2000, 3000)] = 0;
-		times[pair<DWORD, DWORD>(3000, 4000)] = 0;
-		times[pair<DWORD, DWORD>(4000, 5000)] = 0;
-		times[pair<DWORD, DWORD>(5000, 7000)] = 0;
-		times[pair<DWORD, DWORD>(7000, 10000)] = 0;
-		times[pair<DWORD, DWORD>(10000, 1000000000)] = 0;
+		map<pair<uint64_t, uint64_t>, int> times;
+		times[pair<uint64_t, uint64_t>(0, 10)] = 0;
+		times[pair<uint64_t, uint64_t>(10, 20)] = 0;
+		times[pair<uint64_t, uint64_t>(20, 50)] = 0;
+		times[pair<uint64_t, uint64_t>(50, 100)] = 0;
+		times[pair<uint64_t, uint64_t>(100, 150)] = 0;
+		times[pair<uint64_t, uint64_t>(150, 200)] = 0;
+		times[pair<uint64_t, uint64_t>(200, 300)] = 0;
+		times[pair<uint64_t, uint64_t>(300, 500)] = 0;
+		times[pair<uint64_t, uint64_t>(500, 700)] = 0;
+		times[pair<uint64_t, uint64_t>(700, 1000)] = 0;
+		times[pair<uint64_t, uint64_t>(1000, 1500)] = 0;
+		times[pair<uint64_t, uint64_t>(1500, 2000)] = 0;
+		times[pair<uint64_t, uint64_t>(2000, 3000)] = 0;
+		times[pair<uint64_t, uint64_t>(3000, 4000)] = 0;
+		times[pair<uint64_t, uint64_t>(4000, 5000)] = 0;
+		times[pair<uint64_t, uint64_t>(5000, 7000)] = 0;
+		times[pair<uint64_t, uint64_t>(7000, 10000)] = 0;
+		times[pair<uint64_t, uint64_t>(10000, 1000000000)] = 0;
 
 
 	
 		for (auto item = recvTimes.begin(); item != recvTimes.end(); item++) {
-			DWORD t = item->second - sendTimes[item->first];
+			uint64_t t = item->second - sendTimes[item->first];
 			for (auto item1 = times.begin(); item1 != times.end(); item1++) {
 				if (t >= item1->first.first && t < item1->first.second) {
 					item1->second++;
@@ -258,8 +258,8 @@ void UdpEcho::printResult() {
 		}
 		COUT("接收数据包详情");
 		for (auto item = times.begin(); item != times.end(); item++) {
-			DWORD d1 = item->first.first;
-			DWORD d2 = item->first.second;
+			uint64_t d1 = item->first.first;
+			uint64_t d2 = item->first.second;
 			int count = item->second;
 			if (count > 0) {
 				double p = count*100.0 / allRecvCount;

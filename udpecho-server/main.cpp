@@ -130,6 +130,7 @@ string readAllInput() {
 
 int main(int argc, char* argv[]) {
 	signal(SIGINT, Handler);
+	//int k = 22 % (-3);
 
 	//while (true) {
 	//	int k = rand(-2, 2);

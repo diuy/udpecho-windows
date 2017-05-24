@@ -1,10 +1,10 @@
 #pragma once
 
-constexpr int MAX_SPEED = 1024 * 300;//最大速度为100MB
+constexpr int MAX_SPEED = 1024 * 50;//最大速度为50KB
 //constexpr int RECV_TIMEOUT = 10000;//超时时间
 constexpr int BUFFER_SIZE = 1024 * 100;//收发缓存大小
 constexpr int HEAD_SIZE = 2 + 2 + 4 + 4;//命令包头大小
-constexpr int MAX_SIZE = 1472;//发送包的最大值，会随机增加0-1倍的数据
+constexpr int MAX_SIZE = 1472;//发送包的最大值
 constexpr int MIN_SIZE = HEAD_SIZE;//发送包最小值
 
 //HEAD Content
@@ -38,13 +38,13 @@ private:
 
 	SOCKET so;
 private:
-	int allSendCount;
-	int allSendSize;
-	int allRecvCount;
-	int allRecvSize;
-	DWORD _startTime;
-	DWORD _stopTime;
-	map<int, DWORD> sendTimes;
-	map<int, DWORD> recvTimes;
+	uint64_t allSendCount;
+	uint64_t allSendSize;
+	uint64_t allRecvCount;
+	uint64_t allRecvSize;
+	uint64_t _startTime;
+	uint64_t _stopTime;
+	map<int, uint64_t> sendTimes;
+	map<int, uint64_t> recvTimes;
 };
 

@@ -85,7 +85,6 @@ static void ReadConfig(string &ip,int& port,int &speed,int& size,int& tag) {
 	port = GetPrivateProfileIntA("Config", "port", DEFAULT_PORT, iniFile);
 	speed = GetPrivateProfileIntA("Config", "speed", DEFAULT_SPEED, iniFile);
 	size = GetPrivateProfileIntA("Config", "size", DEFAULT_SIZE, iniFile);
-	srand((uint32_t)time(0));
 	int defaultTag = rand();
 	tag = GetPrivateProfileIntA("Config", "tag", defaultTag, iniFile);
 }
@@ -101,6 +100,7 @@ static void WriteConfig(string ip, int port, int speed, int size, int tag) {
 BOOL CMainDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
+	srand((uint32_t)time(0));
 
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标

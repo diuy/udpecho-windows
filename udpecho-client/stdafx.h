@@ -68,6 +68,7 @@ do{ ostringstream os ; \
 	WriteLog(os.str(),LOG_CERR);\
 }while (0)
 
+extern uint64_t GetNowTime();
 
 #ifdef _UNICODE
 #if defined _M_IX86

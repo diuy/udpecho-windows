@@ -5,3 +5,6 @@
 
 #include "stdafx.h"
 
+uint64_t GetNowTime() {
+	return GetTickCount64();
+}
