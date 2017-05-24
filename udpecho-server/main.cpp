@@ -11,7 +11,7 @@
 
 using namespace std;
 
-constexpr int DEFAULT_PORT = 40000;//默认端口
+constexpr int DEFAULT_PORT = 45005;//默认端口
 constexpr int RECV_TIMEOUT = 2000;//超时时间
 constexpr int BUFFER_SIZE = 1024*100;//收发缓存大小
 

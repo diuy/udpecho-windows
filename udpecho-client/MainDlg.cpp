@@ -8,8 +8,8 @@
 #define new DEBUG_NEW
 #endif
 
-#define DEFAULT_IP "172.20.2.220"
-#define DEFAULT_PORT 40000
+#define DEFAULT_IP "121.41.108.248"
+#define DEFAULT_PORT 45005
 #define DEFAULT_SPEED 2000
 #define DEFAULT_SIZE 30
 
