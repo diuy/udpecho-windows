@@ -131,7 +131,7 @@ void UdpEcho::sendData() {
 		}
 
 		*((int*)(d + 8)) = index;
-		realSize = size;// +rand(-size / 3, size / 3);//随机把包大小加减1/3
+		realSize = size+rand(-size / 3, size / 3);//随机把包大小加减1/3
 		if (realSize < MIN_SIZE) {
 			realSize = MIN_SIZE;
 		} else if (realSize > MAX_SIZE) {
@@ -198,6 +198,8 @@ void UdpEcho::printResult() {
 	double lastSizePercent = lastSize*100.00/allSendSize;
 	double sendCountPerSecond = allSendCount*1000.0 / (_stopTime -_startTime);
 	double sendSizePerSecond = allSendSize*1000.0 / (_stopTime - _startTime);
+	double sendSizePerPack = allSendSize *1.0/ allSendCount;
+	double recvSizePerPack = allRecvSize *1.0 / allRecvCount;
 
 	COUT("发送时间(毫秒):" << _stopTime - _startTime);
 
@@ -210,8 +212,11 @@ void UdpEcho::printResult() {
 	} 
 	if (lastCountPercent < 100) {
 
-		COUT("发送包数:" << allSendCount << ",发送流量:" << allSendSize);
-		COUT("接收包数:" << allRecvCount << ",接收流量:" << allRecvSize);
+		COUT("发送包数:" << allSendCount << ",发送流量:" << allSendSize << 
+			",发送包平均大小:" << setiosflags(ios::fixed) << setprecision(2) << sendSizePerPack);
+		COUT("接收包数:" << allRecvCount << ",接收流量:" << allRecvSize << 
+			",接收包平均大小:" << setiosflags(ios::fixed) << setprecision(2) << recvSizePerPack);
+
 		COUT("每秒发送包数:" << setiosflags(ios::fixed) << setprecision(2)<<sendCountPerSecond <<
 			",每秒发送流量:" << setiosflags(ios::fixed) << setprecision(2)<<sendSizePerSecond);
 
