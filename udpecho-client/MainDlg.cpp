@@ -169,6 +169,9 @@ HCURSOR CMainDlg::OnQueryDragIcon()
 
 
 void CMainDlg::OnBnClickedBtnStart() {
+	if (echo)
+		return;
+
 	CString strIp, strPort,strSpeed,strSize;
 	string ip;
 	int port = -1;
@@ -229,6 +232,7 @@ void CMainDlg::OnBnClickedBtnStart() {
 
 void CMainDlg::OnBnClickedBtnStop() {
 	if (echo) {
+		KillTimer(999);
 		echo->stopSend();
 		SetTimer(1000, 3000, NULL);
 		btnStop.EnableWindow(FALSE);
@@ -241,11 +245,12 @@ void CMainDlg::OnBnClickedBtnStop() {
 
 
 void CMainDlg::OnTimer(UINT_PTR nIDEvent) {
+	TRACE(L"Timer:%d\n", nIDEvent);
 
-	KillTimer(nIDEvent);
 	if (nIDEvent == 999) {
 		OnBnClickedBtnStop();
 	} else if (nIDEvent == 1000) {
+		KillTimer(1000);
 		if (echo) {
 			echo->stop();
 			echo.reset();
