@@ -129,7 +129,7 @@ BOOL CMainDlg::OnInitDialog()
 	logFilePath= CStringA(exePath);
 	logFilePath.Append("\\udpecho-client");
 	_mkdir(logFilePath);
-	logFilePath.Append(CStringA(CTime::GetCurrentTime().Format("\\%Y%m%d.log")));
+	logFilePath.Append(CStringA(CTime::GetCurrentTime().Format("\\%Y%m%d.txt")));
 	logFile = fopen(logFilePath, "ab");
 	return TRUE;  
 }
@@ -218,9 +218,9 @@ void CMainDlg::OnBnClickedBtnStart() {
 		CERR("大小格式错误");
 		return;
 	}
-
 	echo.reset(new UdpEcho(ip, port, speed, size, tag));
 	if (echo->start()) {
+		COUT("请等待1分钟出结果!");
 		WriteConfig(ip, port, speed, size, tag);
 		btnStart.EnableWindow(FALSE);
 		SetTimer(999, 60 * 1000, NULL);

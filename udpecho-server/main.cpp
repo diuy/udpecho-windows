@@ -152,6 +152,6 @@ int main(int argc, char* argv[]) {
 	COUT("started,port:" << port);
 	Work();
 	Close();
-	COUT("stoped!" );
+	COUT("stopped!" );
 }
 

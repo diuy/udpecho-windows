@@ -74,7 +74,7 @@ bool UdpEcho::start() {
 	_startTime = GetNowTime();
 	recvThread.reset(new thread(mem_fn(&UdpEcho::recvData), this));
 	sendThread.reset(new thread(mem_fn(&UdpEcho::sendData), this));
-	COUT("started!");
+	COUT("started,windows!");
 	COUT("ip:" << ip << ",port:" << port <<
 	",tag:"<<tag);
 	COUT("speed:" << speed << ",size:" << size << ",countPerSecond:" << setiosflags(ios::fixed) << setprecision(2)<<speed*1.0 / size);
@@ -86,7 +86,7 @@ void UdpEcho::stopSend() {
 		return;
 	_stopTime = GetNowTime();
 	sendRunFlag = false;
-	COUT("send stoped!");
+	COUT("send stopped!");
 }
 
 void UdpEcho::stop() {
@@ -104,7 +104,7 @@ void UdpEcho::stop() {
 	sendThread = nullptr;
 	so = INVALID_SOCKET;
 	printResult();
-	COUT("stoped!");
+	COUT("stopped!");
 }
 
 void UdpEcho::sendData() {
@@ -183,7 +183,7 @@ void UdpEcho::recvData() {
 		index = *((int*)(d + 8));
 		recvTimes[index] = nowTime;
 		if (t != tag) {
-			CERR("recv tag error," << tag);
+			CERR("recv tag error,tag:" << tag);
 			continue;
 		}
 		allRecvCount++;
