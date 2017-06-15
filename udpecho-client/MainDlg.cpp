@@ -78,7 +78,7 @@ void WriteLog(const string & content, int type) {
 }
 
 
-static void ReadConfig(string &ip,int& port,int &speed,int& size,int& tag) {
+static void ReadConfig(string &ip,int& port,int &speed,int& size,int& tag,int &_auto) {
 	char tmp[255] = { 0 };
 	GetPrivateProfileStringA("Config", "ip", DEFAULT_IP, tmp, 255, iniFile);
 	ip = tmp;
@@ -87,6 +87,7 @@ static void ReadConfig(string &ip,int& port,int &speed,int& size,int& tag) {
 	size = GetPrivateProfileIntA("Config", "size", DEFAULT_SIZE, iniFile);
 	int defaultTag = rand();
 	tag = GetPrivateProfileIntA("Config", "tag", defaultTag, iniFile);
+	_auto = GetPrivateProfileIntA("Config", "auto", 0, iniFile);
 }
 
 static void WriteConfig(string ip, int port, int speed, int size, int tag) {
@@ -119,7 +120,8 @@ BOOL CMainDlg::OnInitDialog()
 	int port ;
 	int speed ;
 	int size ;
-	ReadConfig(ip, port, speed, size, tag);
+	int _auto;
+	ReadConfig(ip, port, speed, size, tag,_auto);
 	SetDlgItemText(IDC_TEXT_IP, CStringW(ip.c_str()));
 	SetDlgItemText(IDC_TEXT_PORT, CStringW(IntToString(port).c_str()));
 	SetDlgItemText(IDC_TEXT_SPEED, CStringW(IntToString(speed).c_str()));
@@ -131,6 +133,11 @@ BOOL CMainDlg::OnInitDialog()
 	_mkdir(logFilePath);
 	logFilePath.Append(CStringA(CTime::GetCurrentTime().Format("\\%Y%m%d.txt")));
 	logFile = fopen(logFilePath, "ab");
+
+	if (_auto > 0) {
+		SetTimer(333, (_auto * 1000 * 60)+5000, NULL);
+		OnBnClickedBtnStart();
+	}
 	return TRUE;  
 }
 
@@ -261,6 +268,8 @@ void CMainDlg::OnTimer(UINT_PTR nIDEvent) {
 		COUT("日志文件路径:" << logFilePath<<"\r\n");
 		btnStart.EnableWindow(TRUE);
 		btnStop.EnableWindow(TRUE);
+	} else if (nIDEvent == 333) {
+		OnBnClickedBtnStart();
 	}
 	
 
@@ -278,5 +287,6 @@ void CMainDlg::OnClose() {
 		logFile = NULL;
 	}
 	Cleanup();
+	KillTimer(333);
 	CDialogEx::OnClose();
 }
