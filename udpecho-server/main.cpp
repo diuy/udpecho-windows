@@ -5,6 +5,8 @@
 #include <iostream>
 #include <iomanip>
 #include <map>
+#include <sstream>
+#include <direct.h>
 
 #include "common/Util.h"
 #pragma comment(lib,"ws2_32.lib")
@@ -15,9 +17,24 @@ constexpr int DEFAULT_PORT = 45005;//默认端口
 constexpr int RECV_TIMEOUT = 2000;//超时时间
 constexpr int BUFFER_SIZE = 1024*100;//收发缓存大小
 
+#define LOG_COUT 0
+#define LOG_CERR 1
 
-#define COUT(V) std::cout<<nowTimeStr()<<": "<<V<<endl
-#define CERR(V) std::cerr<<nowTimeStr()<<": "<<V<<endl
+static void WriteLog(const string & content, int type);
+
+#define COUT(V) \
+do{ ostringstream os ; \
+	os<<V; \
+	WriteLog(os.str(),LOG_COUT);\
+}while (0)
+
+#define CERR(V) \
+do{ ostringstream os ; \
+	os<<V; \
+	WriteLog(os.str(),LOG_CERR);\
+}while (0)
+static FILE* logFile = NULL;
+
 
 SOCKET _socket = INVALID_SOCKET;
 
@@ -130,6 +147,12 @@ string readAllInput() {
 
 int main(int argc, char* argv[]) {
 	signal(SIGINT, Handler);
+	string logFilePath = "udpecho-server\\";
+	_mkdir(logFilePath.c_str());
+	logFilePath.append(nowDateStr());
+	logFilePath.append(".txt");
+	logFile = fopen(logFilePath.c_str(), "ab");
+
 	//int k = 22 % (-3);
 
 	//while (true) {
@@ -153,5 +176,20 @@ int main(int argc, char* argv[]) {
 	Work();
 	Close();
 	COUT("stopped!" );
+	if (logFile != NULL) {
+		fclose(logFile);
+	}
 }
 
+static void WriteLog(const string & content, int type) {
+	static const char* LEVEL[] = { "DEBUG", "ERROR" };
+
+	string str = nowTimeStr();
+	str.append(": ").append(LEVEL[type]).append(":").append(content).append("\r\n");
+	cout << str;
+
+	if (logFile) {
+		fwrite(str.c_str(), str.length(), 1, logFile);
+		fflush(logFile);
+	}
+}
