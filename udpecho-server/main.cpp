@@ -39,6 +39,7 @@ static FILE* logFile = NULL;
 SOCKET _socket = INVALID_SOCKET;
 
 map<int, int> recvInfos;
+map<int, int> recvTimes;
 
 bool Open(int port) {
 
@@ -97,23 +98,43 @@ void Work() {
 	struct sockaddr_in addrFrom;
 	int fromLen = 0;
 	int tag;
+	int count = 0;
 	//int index;
 	while (true) {
 		fromLen = sizeof(addrFrom);
 		recvSize = recvfrom(_socket, (char*)buff, BUFFER_SIZE, 0, (struct sockaddr *)&addrFrom, &fromLen);
+		count++;
+		if (recvSize < 0 || count>100) {
+			auto item = recvInfos.begin();
+			int timeNow = (int)time(0);
+			int timeOld;
+			while (item != recvInfos.end()) {
+				timeOld = recvTimes[item->first];
+				if (timeOld > timeNow || timeNow - timeOld > 3) {
+					COUT("tag:" << (item->first) << ",count:" << item->second);
+					recvTimes.erase(item->first);
+					item = recvInfos.erase(item);
+				} else {
+					++item;
+				}
+			}
+			count = 0;
+		}
+
 		if (recvSize == 0) {
 			CERR("socket closed,error:"<< WSAGetLastError());
 			break;
 		}
 		if (recvSize < 0) {
-			for (auto item = recvInfos.begin(); item != recvInfos.end(); item++) {
+			/*for (auto item = recvInfos.begin(); item != recvInfos.end(); item++) {
 				COUT ("tag:" << (item->first)<<",count:"<<item->second);
 			}
-			recvInfos.clear();
+			recvInfos.clear();*/
 		} else {
 			tag = *((int*)(buff + 4));
 			//index = *((int*)(buff + 8));
 			recvInfos[tag]++;
+			recvTimes[tag] = (int)time(0);
 			sendSize = sendto(_socket, (char*)buff, recvSize, 0, (struct sockaddr *)&addrFrom, sizeof(addrFrom));
 			if (sendSize <= 0) {
 				CERR("send failed, ip:" << inet_ntoa(addrFrom.sin_addr) << ",port:" << ntohs(addrFrom.sin_port) << ",ret:"<< sendSize);
