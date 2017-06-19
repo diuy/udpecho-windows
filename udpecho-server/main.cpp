@@ -15,7 +15,7 @@ using namespace std;
 
 constexpr int DEFAULT_PORT = 45005;//默认端口
 constexpr int RECV_TIMEOUT = 2000;//超时时间
-constexpr int BUFFER_SIZE = 1024*100;//收发缓存大小
+constexpr int BUFFER_SIZE = 1024*1024*5;//收发缓存大小
 
 #define LOG_COUT 0
 #define LOG_CERR 1
@@ -38,8 +38,15 @@ static FILE* logFile = NULL;
 
 SOCKET _socket = INVALID_SOCKET;
 
-map<int, int> recvInfos;
-map<int, int> recvTimes;
+struct Info {
+	int tag;
+	int16_t id;
+	int recvCount;
+	int lastIndex;
+	int lastTime;
+};
+
+map<int, Info> recvInfos;
 
 bool Open(int port) {
 
@@ -89,7 +96,22 @@ bool Open(int port) {
 	return true;
 }
 
+void printInfo(const Info &info) {
+	COUT("tag:" << (info.tag) <<",id:"<<info.id  << ",count:" << info.recvCount <<",index:"<<info.lastIndex);
+}
 
+void testInfo(int time) {
+	auto item = recvInfos.begin();
+	while (item != recvInfos.end()) {
+		Info& info = item->second;
+		if (info.lastTime > time || time - info.lastTime > 5) {
+			printInfo(info);
+			item = recvInfos.erase(item);
+		} else {
+			++item;
+		}
+	}
+}
 
 void Work() {
 	uint8_t *buff = new uint8_t[BUFFER_SIZE];
@@ -98,49 +120,57 @@ void Work() {
 	struct sockaddr_in addrFrom;
 	int fromLen = 0;
 	int tag;
+	int16_t id;
+	int index;
 	int count = 0;
-	//int index;
+	int nowTime;
+	bool hasTag = false;
 	while (true) {
 		fromLen = sizeof(addrFrom);
 		recvSize = recvfrom(_socket, (char*)buff, BUFFER_SIZE, 0, (struct sockaddr *)&addrFrom, &fromLen);
-		count++;
-		if (recvSize < 0 || count>100) {
-			auto item = recvInfos.begin();
-			int timeNow = (int)time(0);
-			int timeOld;
-			while (item != recvInfos.end()) {
-				timeOld = recvTimes[item->first];
-				if (timeOld > timeNow || timeNow - timeOld > 3) {
-					COUT("tag:" << (item->first) << ",count:" << item->second);
-					recvTimes.erase(item->first);
-					item = recvInfos.erase(item);
-				} else {
-					++item;
-				}
-			}
-			count = 0;
-		}
-
+		
+		nowTime = (int)time(0);
 		if (recvSize == 0) {
 			CERR("socket closed,error:"<< WSAGetLastError());
 			break;
 		}
+
 		if (recvSize < 0) {
-			/*for (auto item = recvInfos.begin(); item != recvInfos.end(); item++) {
-				COUT ("tag:" << (item->first)<<",count:"<<item->second);
+			testInfo(nowTime);
+			continue;
+		} 
+
+		id = *((int16_t*)(buff + 2));
+		tag = *((int*)(buff + 4));
+		index = *((int*)(buff + 8));
+		hasTag = recvInfos.count(tag) > 0;
+		Info &info = recvInfos[tag];
+		if (hasTag) {
+			if (info.id != id) {
+				printInfo(info);
+				info.recvCount = 0;
 			}
-			recvInfos.clear();*/
 		} else {
-			tag = *((int*)(buff + 4));
-			//index = *((int*)(buff + 8));
-			recvInfos[tag]++;
-			recvTimes[tag] = (int)time(0);
-			sendSize = sendto(_socket, (char*)buff, recvSize, 0, (struct sockaddr *)&addrFrom, sizeof(addrFrom));
-			if (sendSize <= 0) {
-				CERR("send failed, ip:" << inet_ntoa(addrFrom.sin_addr) << ",port:" << ntohs(addrFrom.sin_port) << ",ret:"<< sendSize);
-			}
+			info.recvCount = 0;
+		}
+		info.id = id;
+		info.tag = tag;
+		info.lastIndex = index;
+		info.lastTime = nowTime;
+		info.recvCount++;
+			
+		sendSize = sendto(_socket, (char*)buff, recvSize, 0, (struct sockaddr *)&addrFrom, sizeof(addrFrom));
+		if (sendSize <= 0) {
+			CERR("send failed, ip:" << inet_ntoa(addrFrom.sin_addr) << ",port:" << ntohs(addrFrom.sin_port)<<",tag:"<<
+				tag<<",id:"<<id<<",ret:"<< sendSize);
+		}
+
+		if (++count > 200) {
+			testInfo(nowTime);
+			count = 0;
 		}
 	}
+	delete[]buff;
 }
 
 void Close() {

@@ -15,7 +15,7 @@ constexpr int MIN_SIZE = HEAD_SIZE;//发送包最小值
 
 class UdpEcho {
 public:
-	UdpEcho(string ip,int port,int speed,int size,int tag);
+	UdpEcho(string ip,int port,int speed,int size,int tag,int16_t id);
 	~UdpEcho();
 	bool start();
 	void stopSend();
@@ -30,6 +30,7 @@ private:
 	const int speed;
 	const int size;
 	const int tag;
+	const int id;
 	unique_ptr<thread>	sendThread;
 	unique_ptr<thread>	recvThread;
 

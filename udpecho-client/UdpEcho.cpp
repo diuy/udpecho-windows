@@ -2,9 +2,8 @@
 #include "UdpEcho.h"
 
 
-
-UdpEcho::UdpEcho(string ip, int port, int speed, int size, int tag)
-	:ip(ip), port(port), speed(speed), size(size), tag(tag)
+UdpEcho::UdpEcho(string ip, int port, int speed, int size, int tag, int16_t id)
+	:ip(ip), port(port), speed(speed), size(size), tag(tag),id(id)
 	, so(INVALID_SOCKET), sendRunFlag(false),recvRunFlag(false)
 	, allSendCount(0), allSendSize(0), allRecvCount(0), allRecvSize(0), _startTime(0), _stopTime(0){
 }
@@ -75,8 +74,7 @@ bool UdpEcho::start() {
 	recvThread.reset(new thread(mem_fn(&UdpEcho::recvData), this));
 	sendThread.reset(new thread(mem_fn(&UdpEcho::sendData), this));
 	COUT("started,windows!");
-	COUT("ip:" << ip << ",port:" << port <<
-	",tag:"<<tag);
+	COUT("ip:" << ip << ",port:" << port <<",tag:"<<tag<<",id:"<<id);
 	COUT("speed:" << speed << ",size:" << size << ",countPerSecond:" << setiosflags(ios::fixed) << setprecision(2)<<speed*1.0 / size);
 	return true;
 }
@@ -112,6 +110,7 @@ void UdpEcho::sendData() {
 	char* d = &data[0];
 	d[0] = (char)0xf1;
 	d[1] = (char) 0xf2;
+	*((int16_t*)(d + 2)) = id;
 
 	*((int*)(d + 4)) = tag;
 	int index = 0;
@@ -129,7 +128,6 @@ void UdpEcho::sendData() {
 			Sleep(1);
 			continue;
 		}
-
 		*((int*)(d + 8)) = index;
 		realSize = size+rand(-size / 3, size / 3);//随机把包大小加减1/3
 		if (realSize < MIN_SIZE) {
@@ -210,7 +208,8 @@ void UdpEcho::printResult() {
 	} else if (lastCountPercent > 10) {
 		COUT("丢包比较严重");
 	} 
-	if (lastCountPercent < 100) {
+	//if (lastCountPercent < 100) {
+	if(lastCountPercent!=1000){
 
 		COUT("发送包数:" << allSendCount << ",发送流量:" << allSendSize << 
 			",发送包平均大小:" << setiosflags(ios::fixed) << setprecision(2) << sendSizePerPack);

@@ -98,6 +98,15 @@ static void WriteConfig(string ip, int port, int speed, int size, int tag) {
 	WritePrivateProfileStringA("Config", "tag", IntToString(tag).c_str(), iniFile);
 }
 
+static int16_t ReadId() {
+	UINT id = GetPrivateProfileIntA("Config", "id", 0, iniFile);
+	return (int16_t)id;
+}
+
+static void WriteId(int16_t id) {
+	WritePrivateProfileStringA("Config", "id", IntToString(id).c_str(), iniFile);
+}
+
 BOOL CMainDlg::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
@@ -135,7 +144,7 @@ BOOL CMainDlg::OnInitDialog()
 	logFile = fopen(logFilePath, "ab");
 
 	if (_auto > 0) {
-		SetTimer(333, (_auto * 1000 * 60)+5000, NULL);
+		SetTimer(333, (_auto * 1000 * 60)+6000, NULL);
 		OnBnClickedBtnStart();
 	}
 	return TRUE;  
@@ -225,10 +234,12 @@ void CMainDlg::OnBnClickedBtnStart() {
 		CERR("大小格式错误");
 		return;
 	}
-	echo.reset(new UdpEcho(ip, port, speed, size, tag));
+	int16_t id = ReadId();
+	echo.reset(new UdpEcho(ip, port, speed, size, tag, id));
 	if (echo->start()) {
 		COUT("请等待1分钟出结果!");
 		WriteConfig(ip, port, speed, size, tag);
+		WriteId(++id);
 		btnStart.EnableWindow(FALSE);
 		SetTimer(999, 60 * 1000, NULL);
 	} else {
@@ -241,7 +252,7 @@ void CMainDlg::OnBnClickedBtnStop() {
 	if (echo) {
 		KillTimer(999);
 		echo->stopSend();
-		SetTimer(1000, 3000, NULL);
+		SetTimer(1000, 5000, NULL);
 		btnStop.EnableWindow(FALSE);
 	}
 
