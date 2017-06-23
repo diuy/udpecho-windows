@@ -1,15 +1,33 @@
 #include <cstdio>
 #include <cassert>
 #include <signal.h>
-#include <winsock2.h>
+
 #include <iostream>
 #include <iomanip>
 #include <map>
 #include <sstream>
-#include <direct.h>
 #include <string>
 #include <time.h>
 #include <sstream>
+
+#ifdef WIN32
+#define _WIN32_
+#endif
+
+#ifdef _WIN32_
+#   include <winsock2.h>
+#   include <direct.h>
+#else
+#   include <sys/socket.h>
+#   include <sys/types.h>
+#   include <netinet/in.h>
+#   include <unistd.h>
+#   include <arpa/inet.h>
+#   include <sys/stat.h>
+#   define SOCKET int
+#   define INVALID_SOCKET -1
+#   define SOCKET_ERROR -1
+#endif
 
 
 using namespace std;
@@ -61,15 +79,14 @@ bool Open(int port) {
 		return false;
 	}
 
-
-	//初始化WSA
+#ifdef _WIN32_
 	WORD sockVersion = MAKEWORD(2, 2);
 	WSADATA wsaData;
 	if (WSAStartup(sockVersion, &wsaData) != 0) {
 		CERR ( "WSAStartup error" );
 		return false;
 	}
-
+#endif
 	int ret = 0;
 	struct sockaddr_in addr;
 
@@ -78,23 +95,35 @@ bool Open(int port) {
 		CERR ( "socket create fail" );
 		return false;
 	}
-	
-	addr.sin_family = AF_INET; //地址家族
-	addr.sin_port = htons(port); //注意转化为网络字节序
-	addr.sin_addr.S_un.S_addr = htonl(INADDR_ANY); //使用INADDR_ANY 指示任意地址
+
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(port);
+#ifdef _WIN32_
+	addr.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
+#else
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+#endif
 	int flag1 = 1;
-	setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&flag1, sizeof(flag1));
+    ret = setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, (const char*)&flag1, sizeof(flag1));
 
 	flag1 = BUFFER_SIZE;
-	setsockopt(_socket, SOL_SOCKET, SO_RCVBUF, (const char*)&flag1, sizeof(flag1));
-	setsockopt(_socket, SOL_SOCKET, SO_SNDBUF, (const char*)&flag1, sizeof(flag1));
-
+    ret = setsockopt(_socket, SOL_SOCKET, SO_RCVBUF, (const char*)&flag1, sizeof(flag1));
+    ret = setsockopt(_socket, SOL_SOCKET, SO_SNDBUF, (const char*)&flag1, sizeof(flag1));
+#ifdef _WIN32_
 	flag1 = RECV_TIMEOUT;
-	setsockopt(_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&flag1, sizeof(flag1));
+    ret = setsockopt(_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&flag1, sizeof(flag1));
+#else
+    struct timeval timeout={RECV_TIMEOUT/1000,0};//3s
+    ret = setsockopt(_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+#endif
 
 	ret = bind(_socket, (struct sockaddr *)&addr, sizeof(addr));
 	if (ret == SOCKET_ERROR) {
-		closesocket(_socket); //关闭套接字
+#ifdef _WIN32_
+		closesocket(_socket);
+#else
+        close(_socket);
+#endif
 		_socket = INVALID_SOCKET;
 		COUT("bind error !");
 		return false;
@@ -121,10 +150,17 @@ void testInfo(int time) {
 
 void Work() {
 	uint8_t *buff = new uint8_t[BUFFER_SIZE];
-	int recvSize;
-	int sendSize;
+
 	struct sockaddr_in addrFrom;
+#ifdef _WIN32_
 	int fromLen = 0;
+    int recvSize;
+	int sendSize;
+#else
+    socklen_t fromLen = 0;
+    ssize_t recvSize;
+    ssize_t sendSize;
+#endif
 	int tag;
 	int16_t id;
 	int index;
@@ -134,17 +170,21 @@ void Work() {
 	while (true) {
 		fromLen = sizeof(addrFrom);
 		recvSize = recvfrom(_socket, (char*)buff, BUFFER_SIZE, 0, (struct sockaddr *)&addrFrom, &fromLen);
-		
+
 		nowTime = (int)time(0);
 		if (recvSize == 0) {
+#ifdef  _WIN32_
 			CERR("socket closed,error:"<< WSAGetLastError());
+#else
+            CERR("socket closed");
+#endif
 			break;
 		}
 
 		if (recvSize < 0) {
 			testInfo(nowTime);
 			continue;
-		} 
+		}
 
 		id = *((int16_t*)(buff + 2));
 		tag = *((int*)(buff + 4));
@@ -164,7 +204,7 @@ void Work() {
 		info.lastIndex = index;
 		info.lastTime = nowTime;
 		info.recvCount++;
-			
+
 		sendSize = sendto(_socket, (char*)buff, recvSize, 0, (struct sockaddr *)&addrFrom, sizeof(addrFrom));
 		if (sendSize <= 0) {
 			CERR("send failed, ip:" << inet_ntoa(addrFrom.sin_addr) << ",port:" << ntohs(addrFrom.sin_port)<<",tag:"<<
@@ -180,7 +220,11 @@ void Work() {
 }
 
 void Close() {
-	closesocket(_socket); //关闭套接字
+#ifdef _WIN32_
+	closesocket(_socket);
+#else
+    close(_socket);
+#endif
 	_socket = INVALID_SOCKET;
 }
 
@@ -205,7 +249,11 @@ string readAllInput() {
 int main(int argc, char* argv[]) {
 	signal(SIGINT, Handler);
 	string logFilePath = "udpecho-server\\";
+#ifdef _WIN32_
 	_mkdir(logFilePath.c_str());
+#else
+    mkdir(logFilePath.c_str(),777);
+#endif
 	logFilePath.append(nowDateStr());
 	logFilePath.append(".txt");
 	logFile = fopen(logFilePath.c_str(), "ab");
