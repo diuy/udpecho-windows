@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cassert>
 #include <signal.h>
-
+#include <cstdlib>
 #include <iostream>
 #include <iomanip>
 #include <map>
@@ -9,10 +9,9 @@
 #include <string>
 #include <time.h>
 #include <sstream>
-
 #ifdef WIN32
 #define _WIN32_
-#endif
+#endif // WIN32
 
 #ifdef _WIN32_
 #   include <winsock2.h>
@@ -32,9 +31,9 @@
 
 using namespace std;
 
-constexpr int DEFAULT_PORT = 45005;//默认端口
-constexpr int RECV_TIMEOUT = 2000;//超时时间
-constexpr int BUFFER_SIZE = 1024*1024*5;//收发缓存大小
+static const int DEFAULT_PORT = 45005;//默认端口
+static const int RECV_TIMEOUT = 2000;//超时时间
+static const int BUFFER_SIZE = 1024*1024*5;//收发缓存大小
 
 #define LOG_COUT 0
 #define LOG_CERR 1
@@ -79,6 +78,8 @@ bool Open(int port) {
 		return false;
 	}
 
+
+	//?????WSA
 #ifdef _WIN32_
 	WORD sockVersion = MAKEWORD(2, 2);
 	WSADATA wsaData;
@@ -136,12 +137,12 @@ void printInfo(const Info &info) {
 }
 
 void testInfo(int time) {
-	auto item = recvInfos.begin();
+    map<int, Info>::iterator item = recvInfos.begin();
 	while (item != recvInfos.end()) {
 		Info& info = item->second;
 		if (info.lastTime > time || time - info.lastTime > 5) {
 			printInfo(info);
-			item = recvInfos.erase(item);
+			recvInfos.erase(item++);
 		} else {
 			++item;
 		}
