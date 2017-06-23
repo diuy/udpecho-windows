@@ -30,6 +30,9 @@
     <ClInclude Include="MainDlg.h">
       <Filter>main</Filter>
     </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>main</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -43,6 +46,9 @@
     </ClCompile>
     <ClCompile Include="MainApp.cpp">
       <Filter>sys</Filter>
+    </ClCompile>
+    <ClCompile Include="Util.cpp">
+      <Filter>main</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

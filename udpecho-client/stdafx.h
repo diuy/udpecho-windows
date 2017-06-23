@@ -45,7 +45,7 @@
 #include <stdlib.h>
 #include <io.h>
 #include <direct.h>
-#include "common/Util.h"
+#include "Util.h"
 
 using namespace std;
 

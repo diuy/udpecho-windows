@@ -7,9 +7,10 @@
 #include <map>
 #include <sstream>
 #include <direct.h>
+#include <string>
+#include <time.h>
+#include <sstream>
 
-#include "common/Util.h"
-#pragma comment(lib,"ws2_32.lib")
 
 using namespace std;
 
@@ -21,6 +22,11 @@ constexpr int BUFFER_SIZE = 1024*1024*5;//收发缓存大小
 #define LOG_CERR 1
 
 static void WriteLog(const string & content, int type);
+std::string nowTimeStr();
+std::string nowDateStr();
+int StringToInt(const char* str, int defaultValue);
+std::string IntToString(int i);
+int rand(int min, int max);
 
 #define COUT(V) \
 do{ ostringstream os ; \
@@ -243,4 +249,49 @@ static void WriteLog(const string & content, int type) {
 		fwrite(str.c_str(), str.length(), 1, logFile);
 		fflush(logFile);
 	}
+}
+
+
+std::string nowTimeStr() {
+	char str[255];
+	time_t t = time(NULL);
+	tm* t2;
+	t2 = localtime(&t);
+	strftime(str, sizeof(str), "%Y-%m-%d %H:%M:%S", t2);
+	return std::string(str);
+}
+
+std::string nowDateStr() {
+	char str[255];
+	time_t t = time(NULL);
+	tm* t2;
+	t2 = localtime(&t);
+	strftime(str, sizeof(str), "%Y%m%d", t2);
+	return std::string(str);
+}
+
+
+int StringToInt(const char * str, int defaultValue) {
+	istringstream is(str);
+	int k = defaultValue;
+	is >> k;
+	if (!is.eof())
+		return defaultValue;
+	return k;
+}
+
+std::string IntToString(int i) {
+
+	ostringstream os;
+	os << i;
+
+	return os.str();
+}
+
+int rand(int min, int max) {
+	if (min > max)
+		return min;
+	if (max == min)
+		return min;
+	return (rand() % (max - min)) + min;
 }

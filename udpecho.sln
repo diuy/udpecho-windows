@@ -4,11 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udpecho-server", "udpecho-server\udpecho-server.vcxproj", "{FB8004AD-F305-4A07-865A-367D30444D3C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A} = {B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "common", "common\common.vcxproj", "{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "udpecho-client", "udpecho-client\udpecho-client.vcxproj", "{E7083F38-0262-444A-9769-78C7124D989B}"
 EndProject
@@ -28,14 +23,6 @@ Global
 		{FB8004AD-F305-4A07-865A-367D30444D3C}.Release|x64.Build.0 = Release|x64
 		{FB8004AD-F305-4A07-865A-367D30444D3C}.Release|x86.ActiveCfg = Release|Win32
 		{FB8004AD-F305-4A07-865A-367D30444D3C}.Release|x86.Build.0 = Release|Win32
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Debug|x64.ActiveCfg = Debug|x64
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Debug|x64.Build.0 = Debug|x64
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Debug|x86.ActiveCfg = Debug|Win32
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Debug|x86.Build.0 = Debug|Win32
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Release|x64.ActiveCfg = Release|x64
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Release|x64.Build.0 = Release|x64
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Release|x86.ActiveCfg = Release|Win32
-		{B508FF22-ECE3-4C62-AAD4-9548AF3CC70A}.Release|x86.Build.0 = Release|Win32
 		{E7083F38-0262-444A-9769-78C7124D989B}.Debug|x64.ActiveCfg = Debug|x64
 		{E7083F38-0262-444A-9769-78C7124D989B}.Debug|x64.Build.0 = Debug|x64
 		{E7083F38-0262-444A-9769-78C7124D989B}.Debug|x86.ActiveCfg = Debug|Win32

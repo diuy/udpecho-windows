@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Util.h"
 #include <time.h>
 #include <sstream>
